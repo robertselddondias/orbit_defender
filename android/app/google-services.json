@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "851498576938",
+    "project_id": "orbit-defender",
+    "storage_bucket": "orbit-defender.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:851498576938:android:c3147e1bda4bffd5d66753",
+        "android_client_info": {
+          "package_name": "com.selddon.orbit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDtTA1PYo018Zowc4x0r0LVtI7huK4mKJ8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,2 @@
+/Users/robertselddon/projetos/orbit_defender/android/app/.cxx/RelWithDebInfo/6d2v6p44/arm64-v8a/CMakeFiles/edit_cache.dir
+/Users/robertselddon/projetos/orbit_defender/android/app/.cxx/RelWithDebInfo/6d2v6p44/arm64-v8a/CMakeFiles/rebuild_cache.dir

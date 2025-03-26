@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+  <!-- Núcleo do projétil -->
+  <circle cx="10" cy="10" r="3" fill="#FFFF00"/>
+  
+  <!-- Camada de energia interna -->
+  <circle cx="10" cy="10" r="5" fill="#FFFF99" opacity="0.7"/>
+  
+  <!-- Camada de energia externa -->
+  <circle cx="10" cy="10" r="8" fill="#FFFFCC" opacity="0.3"/>
+  
+  <!-- Efeito de movimento -->
+  <path d="M2,10 L5,10" stroke="#FFFF00" stroke-width="2" opacity="0.8"/>
+  <path d="M1,10 L3,10" stroke="#FFFF99" stroke-width="3" opacity="0.4"/>
+  
+  <!-- Pequenas partículas -->
+  <circle cx="4" cy="8" r="0.5" fill="#FFFFFF"/>
+  <circle cx="5" cy="12" r="0.5" fill="#FFFFFF"/>
+  <circle cx="3" cy="11" r="0.7" fill="#FFFFFF" opacity="0.7"/>
+  <circle cx="3" cy="9" r="0.7" fill="#FFFFFF" opacity="0.7"/>
+</svg>

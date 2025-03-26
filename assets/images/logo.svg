@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 800 300" width="800" height="300">
+  <!-- Definições de gradientes e filtros -->
+  <defs>
+    <linearGradient id="titleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4682B4" />
+      <stop offset="100%" stop-color="#87CEEB" />
+    </linearGradient>
+    
+    <linearGradient id="planetGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A2137" />
+      <stop offset="100%" stop-color="#000A1F" />
+    </linearGradient>
+    
+    <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF5555" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#FF0000" stop-opacity="0.4" />
+    </linearGradient>
+    
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  
+  <!-- Fundo com estrelas (opcional, pode ser removido se preferir transparente) -->
+  <rect width="800" height="300" fill="#000000" fill-opacity="0" />
+  
+  <!-- Pequenas estrelas espalhadas -->
+  <g id="stars">
+    <circle cx="100" cy="50" r="1.5" fill="#FFFFFF" opacity="0.7"/>
+    <circle cx="200" cy="30" r="1" fill="#FFFFFF" opacity="0.5"/>
+    <circle cx="700" cy="80" r="1.5" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="650" cy="200" r="1" fill="#FFFFFF" opacity="0.6"/>
+    <circle cx="150" cy="250" r="1.5" fill="#FFFFFF" opacity="0.7"/>
+    <circle cx="550" cy="150" r="1" fill="#FFFFFF" opacity="0.5"/>
+    <circle cx="360" cy="40" r="1.5" fill="#FFFFFF" opacity="0.8"/>
+    <circle cx="450" cy="270" r="1" fill="#FFFFFF" opacity="0.6"/>
+  </g>
+  
+  <!-- Planeta central -->
+  <circle cx="400" cy="150" r="60" fill="url(#planetGradient)" stroke="#4682B4" stroke-width="2"/>
+  
+  <!-- Detalhes do planeta -->
+  <ellipse cx="400" cy="150" rx="60" ry="20" fill="none" stroke="#375D81" stroke-width="1.5" opacity="0.8"/>
+  <ellipse cx="400" cy="150" rx="40" ry="55" fill="none" stroke="#375D81" stroke-width="1.5" opacity="0.8"/>
+  
+  <!-- Órbitas -->
+  <ellipse cx="400" cy="150" rx="110" ry="80" fill="none" stroke="#4682B4" stroke-width="2" stroke-dasharray="1,3" opacity="0.7"/>
+  <ellipse cx="400" cy="150" rx="150" ry="110" fill="none" stroke="#3377FF" stroke-width="1.5" stroke-dasharray="1,5" opacity="0.5"/>
+  
+  <!-- Escudo/Barreira protetora -->
+  <path d="M400,40 Q560,150 400,260 Q240,150 400,40" fill="none" stroke="url(#shieldGradient)" stroke-width="3" opacity="0.8" filter="url(#softGlow)"/>
+  
+  <!-- Texto "ORBIT" -->
+  <text x="230" y="160" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="url(#titleGradient)" text-anchor="middle" filter="url(#glow)">
+    ORBIT
+  </text>
+  
+  <!-- Texto "DEFENDER" -->
+  <text x="570" y="160" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="url(#titleGradient)" text-anchor="middle" filter="url(#glow)">
+    DEFENDER
+  </text>
+  
+  <!-- Pequeno satélite na órbita -->
+  <circle cx="510" cy="90" r="8" fill="#CCCCCC" stroke="#FFFFFF" stroke-width="1"/>
+  
+  <!-- Pequeno laser defensivo partindo do planeta -->
+  <line x1="400" y1="150" x2="470" y2="200" stroke="#FF3333" stroke-width="2" opacity="0.8"/>
+  <circle cx="470" cy="200" r="3" fill="#FF6666" opacity="0.8" filter="url(#softGlow)"/>
+</svg>

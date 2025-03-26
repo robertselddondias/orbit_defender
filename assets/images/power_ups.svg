@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100">
+  <!-- Tiro Triplo (Triple Shot) -->
+  <g transform="translate(50, 50)">
+    <!-- Base circular -->
+    <circle cx="0" cy="0" r="30" fill="#FF8800"/>
+    <circle cx="0" cy="0" r="25" fill="#FFA040" stroke="#FFCC80" stroke-width="1.5"/>
+    
+    <!-- Símbolo do tiro triplo -->
+    <path d="M-15,-10 L-10,10 L-5,-10 L0,10 L5,-10 L10,10 L15,-10" 
+          fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+    
+    <!-- Texto -->
+    <text x="0" y="5" font-family="Arial" font-size="16" font-weight="bold" 
+          text-anchor="middle" fill="#FFFFFF">3X</text>
+    
+    <!-- Efeito de brilho -->
+    <circle cx="0" cy="0" r="33" fill="none" stroke="#FFCC80" stroke-width="1" opacity="0.5"/>
+  </g>
+  
+  <!-- Escudo (Shield) -->
+  <g transform="translate(150, 50)">
+    <!-- Base circular -->
+    <circle cx="0" cy="0" r="30" fill="#4488FF"/>
+    <circle cx="0" cy="0" r="25" fill="#5599FF" stroke="#88BBFF" stroke-width="1.5"/>
+    
+    <!-- Símbolo do escudo -->
+    <path d="M0,-15 
+             C10,-15 15,-10 15,0 
+             C15,12 8,18 0,22 
+             C-8,18 -15,12 -15,0 
+             C-15,-10 -10,-15 0,-15 Z" 
+          fill="none" stroke="#FFFFFF" stroke-width="3"/>
+    
+    <!-- Texto -->
+    <text x="0" y="5" font-family="Arial" font-size="16" font-weight="bold" 
+          text-anchor="middle" fill="#FFFFFF">S</text>
+    
+    <!-- Efeito de brilho -->
+    <circle cx="0" cy="0" r="33" fill="none" stroke="#88BBFF" stroke-width="1" opacity="0.5"/>
+  </g>
+  
+  <!-- Aumento de Velocidade (Speed Boost) -->
+  <g transform="translate(250, 50)">
+    <!-- Base circular -->
+    <circle cx="0" cy="0" r="30" fill="#44CC44"/>
+    <circle cx="0" cy="0" r="25" fill="#55DD55" stroke="#88EE88" stroke-width="1.5"/>
+    
+    <!-- Símbolo de velocidade (relâmpago) -->
+    <path d="M-5,-15 L5,-5 L-2,5 L8,15" 
+          fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+    
+    <!-- Linha de velocidade -->
+    <path d="M-15,0 L15,0" 
+          fill="none" stroke="#FFFFFF" stroke-width="3" stroke-dasharray="3,2"/>
+    
+    <!-- Texto -->
+    <text x="0" y="5" font-family="Arial" font-size="16" font-weight="bold" 
+          text-anchor="middle" fill="#FFFFFF">+S</text>
+    
+    <!-- Efeito de brilho -->
+    <circle cx="0" cy="0" r="33" fill="none" stroke="#88EE88" stroke-width="1" opacity="0.5"/>
+  </g>
+  
+  <!-- Vida Extra (Extra Life) -->
+  <g transform="translate(350, 50)">
+    <!-- Base circular -->
+    <circle cx="0" cy="0" r="30" fill="#DD4444"/>
+    <circle cx="0" cy="0" r="25" fill="#EE5555" stroke="#FF8888" stroke-width="1.5"/>
+    
+    <!-- Símbolo de coração -->
+    <path d="M0,10 
+             C-10,-5 -20,-5 -10,-15 
+             C0,-25 0,-15 0,-15
+             C0,-15 0,-25 10,-15
+             C20,-5 10,-5 0,10 Z" 
+          fill="#FFFFFF"/>
+    
+    <!-- Texto -->
+    <text x="0" y="5" font-family="Arial" font-size="16" font-weight="bold" 
+          text-anchor="middle" fill="#FFFFFF">+♥</text>
+    
+    <!-- Efeito de brilho -->
+    <circle cx="0" cy="0" r="33" fill="none" stroke="#FF8888" stroke-width="1" opacity="0.5"/>
+  </g>
+</svg>

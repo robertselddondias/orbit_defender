@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--Google Play game services IDs. Save this file as res/values/games-ids.xml in your project.-->
+<resources>
+    <!--app_id-->
+    <string name="app_id" translatable="false">851498576938</string>
+    <!--package_name-->
+    <string name="package_name" translatable="false">com.selddon.orbit</string>
+    <!--achievement Piloto Nível 1-->
+    <string name="achievement_piloto_nvel_1" translatable="false">CgkIqtiUiuQYEAIQAg</string>
+    <!--achievement Piloto Nível 2-->
+    <string name="achievement_piloto_nvel_2" translatable="false">CgkIqtiUiuQYEAIQAw</string>
+    <!--achievement Piloto Nível 3-->
+    <string name="achievement_piloto_nvel_3" translatable="false">CgkIqtiUiuQYEAIQBA</string>
+    <!--achievement 10K Pontos-->
+    <string name="achievement_10k_pontos" translatable="false">CgkIqtiUiuQYEAIQBQ</string>
+    <!--leaderboard Orbit Defender-->
+    <string name="leaderboard_orbit_defender" translatable="false">CgkIqtiUiuQYEAIQAQ</string>
+</resources>

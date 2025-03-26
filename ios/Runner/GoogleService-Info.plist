@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>851498576938-aaho4b00hn07f6443m8nqabo3bo0gplp.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyD1um8jaU2eeU2dxshxTHc6WQ0pBPvO2JE</string>
+	<key>GCM_SENDER_ID</key>
+	<string>851498576938</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.selddon.orbit</string>
+	<key>PROJECT_ID</key>
+	<string>orbit-defender</string>
+	<key>STORAGE_BUCKET</key>
+	<string>orbit-defender.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:851498576938:ios:a7f7df6583a5d0e1d66753</string>
+</dict>
+</plist>
