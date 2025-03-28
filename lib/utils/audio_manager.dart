@@ -177,6 +177,55 @@ class AudioManager {
     await playSound('game_over', volume: 1.0);
   }
 
+  Future<void> playSuperShotSound() async {
+    await playSound('super_shot', volume: 0.7);
+  }
+
+  Future<void> playAreaBombSound() async {
+    await playSound('area_bomb', volume: 0.8);
+  }
+
+  Future<void> playTimeWarpSound() async {
+    await playSound('time_warp', volume: 0.6);
+  }
+
+  Future<void> playMagnetFieldSound() async {
+    await playSound('magnet_field', volume: 0.6);
+  }
+
+  Future<void> playRapidFireSound() async {
+    await playSound('rapid_fire', volume: 0.5);
+  }
+
+  Future<void> playAbilityReadySound() async {
+    await playSound('ability_ready', volume: 0.4);
+  }
+
+  Future<void> preloadSound(String soundFileName) async {
+    _checkInitialization();
+
+    if (!_soundEnabled) return;
+
+    try {
+      // Criar um player temporário apenas para carregar o som
+      final player = AudioPlayer();
+
+      // Configurar o som
+      await player.setReleaseMode(ReleaseMode.release);
+
+      // Apenas carregar o som, não reproduzi-lo
+      await player.setSource(AssetSource('sounds/$soundFileName'));
+
+      // Armazenar o player para uso posterior
+      String soundName = soundFileName.replaceAll('.mp3', '').replaceAll('.wav', '');
+      _soundPlayers[soundName] = player;
+
+      debugPrint('AudioManager: som pré-carregado: $soundName');
+    } catch (e) {
+      debugPrint('AudioManager: erro ao pré-carregar som $soundFileName: $e');
+    }
+  }
+
   // Parar todos os sons
   Future<void> stopAllSounds() async {
     try {

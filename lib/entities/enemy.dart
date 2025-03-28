@@ -1,4 +1,4 @@
-// enemy.dart
+// lib/entities/enemy.dart
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -30,9 +30,9 @@ class Enemy {
     required this.pointValue,
   }) : rotationSpeed = (Random().nextDouble() * 0.1) - 0.05;
 
-  void update() {
-    // Mover inimigo
-    position = position + direction * speed;
+  void update({double speedMultiplier = 1.0}) {
+    // Mover inimigo, possivelmente com velocidade reduzida devido a habilidades
+    position = position + direction * (speed * speedMultiplier);
 
     // Rotacionar
     rotation += rotationSpeed;

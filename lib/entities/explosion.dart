@@ -1,4 +1,4 @@
-// explosion.dart
+// lib/entities/explosion.dart
 import 'package:flutter/material.dart';
 
 class Explosion {
@@ -7,6 +7,8 @@ class Explosion {
   double maxRadius;
   double opacity;
   bool isDone;
+  bool isSpecialEffect;
+  Color color;
 
   // Velocidade de crescimento e desvanecimento
   double growthRate;
@@ -20,7 +22,9 @@ class Explosion {
     this.isDone = false,
     this.growthRate = 2.0,
     this.fadeRate = 0.05,
-  });
+    this.isSpecialEffect = false,
+    Color? color,
+  }) : color = color ?? Colors.orange;
 
   void update() {
     // Aumentar tamanho

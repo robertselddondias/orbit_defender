@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:orbit_defender/entities/cannon.dart';
 import 'package:orbit_defender/entities/enemy.dart';
 import 'package:orbit_defender/entities/explosion.dart';
@@ -10,6 +11,8 @@ import 'package:orbit_defender/entities/game_state.dart';
 import 'package:orbit_defender/entities/power_up.dart';
 import 'package:orbit_defender/entities/power_up_type.dart';
 import 'package:orbit_defender/entities/projectile.dart';
+import 'package:orbit_defender/entities/special_ability.dart';
+import 'package:orbit_defender/manager/ability_manager.dart';
 import 'package:orbit_defender/utils/audio_manager.dart';
 import 'package:orbit_defender/utils/high_score_manager.dart';
 import 'package:orbit_defender/utils/math_utils.dart';
@@ -53,6 +56,17 @@ class GameController extends ChangeNotifier {
   final List<Explosion> _explosions = [];
   List<Explosion> get explosions => _explosions;
 
+  // Gerenciador de habilidades
+  final AbilityManager _abilityManager = AbilityManager();
+  AbilityManager get abilityManager => _abilityManager;
+
+  // Efeitos de habilidades ativas
+  bool _isTimeWarpActive = false;
+  double _timeWarpFactor = 0.5; // Inimigos movem-se a 50% da velocidade
+  bool _isRapidFireActive = false;
+  int _rapidFireShotsPerTap = 3; // Número de tiros por toque quando ativo
+  DateTime? _lastRapidFireShot;
+
   // Timers
   Timer? _gameLoop;
   Timer? _enemySpawner;
@@ -65,7 +79,7 @@ class GameController extends ChangeNotifier {
   double _difficultyLevel = 1.0;
   double get difficultyLevel => _difficultyLevel;
 
-// Pontuações para níveis de dificuldade
+  // Pontuações para níveis de dificuldade
   final List<int> _difficultyThresholds = [
     0,       // Nível 1
     500,     // Nível 2 - começa mais cedo (500 pontos)
@@ -79,7 +93,7 @@ class GameController extends ChangeNotifier {
     35000,   // Nível 10 - máximo em 35000 pontos
   ];
 
-// Tempos entre spawns de inimigos por nível (em milissegundos)
+  // Tempos entre spawns de inimigos por nível (em milissegundos)
   final List<int> _enemySpawnIntervals = [
     800,   // Nível 1: a cada 0.8 segundos (quase 2x mais rápido que antes)
     700,   // Nível 2
@@ -93,7 +107,7 @@ class GameController extends ChangeNotifier {
     200,   // Nível 10: a cada 0.2 segundos (MUITO frequente!)
   ];
 
-// Probabilidade de inimigos rápidos por nível (porcentagem)
+  // Probabilidade de inimigos rápidos por nível (porcentagem)
   final List<double> _fastEnemyProbabilities = [
     0.2,   // Nível 1: 20%
     0.25,  // Nível 2
@@ -120,7 +134,7 @@ class GameController extends ChangeNotifier {
     7,    // Nível 10: a cada 7 segundos (era 4)
   ];
 
-// Probabilidade de spawn de power-up por nível (percentual)
+  // Probabilidade de spawn de power-up por nível (percentual)
   final List<double> _powerUpProbabilities = [
     0.5,   // Nível 1: 50% de chance (era 60%)
     0.55,  // Nível 2
@@ -134,7 +148,7 @@ class GameController extends ChangeNotifier {
     0.95,  // Nível 10: 95% de chance (era 100%)
   ];
 
-// Multiplicadores de velocidade base por nível
+  // Multiplicadores de velocidade base por nível
   final List<double> _speedMultipliers = [
     0.7,   // Nível 1: mais lento no começo
     0.9,   // Nível 2
@@ -189,10 +203,199 @@ class GameController extends ChangeNotifier {
     // Inicializar o gerenciador de áudio
     AudioManager().initialize();
 
+    // Inicializar o gerenciador de habilidades
+    _abilityManager.initialize();
+    _abilityManager.addListener(_handleAbilityStateChanged);
+
     _isInitialized = true;
     _log('Controlador inicializado com tamanho de tela: $screenSize');
 
     reset();
+  }
+
+  // Método para lidar com mudanças no estado das habilidades
+  void _handleAbilityStateChanged() {
+    // Atualizar estado das habilidades
+    _isTimeWarpActive = _abilityManager.isAbilityActive(SpecialAbilityType.timeWarp);
+    _isRapidFireActive = _abilityManager.isAbilityActive(SpecialAbilityType.rapidFire);
+
+    // Log para debug
+    if (_isTimeWarpActive) {
+      _log('TimeWarp está ativo');
+    }
+
+    if (_isRapidFireActive) {
+      _log('RapidFire está ativo');
+    }
+
+    // Notificar ouvintes para atualizar a UI
+    notifyListeners();
+  }
+
+  bool activateSpecialAbility(SpecialAbilityType type) {
+    if (_gameState != GameState.playing) {
+      _log('Não foi possível ativar habilidade: o jogo não está em andamento');
+      return false;
+    }
+
+    // Log para debug
+    _log('Tentando ativar habilidade: $type');
+
+    // Tentar ativar a habilidade
+    final bool activated = _abilityManager.activateAbility(type);
+    if (!activated) {
+      _log('Habilidade $type não pode ser ativada (em cooldown)');
+      return false;
+    }
+
+    // Log para debug
+    _log('Habilidade $type ativada com sucesso');
+
+    // Executar o efeito da habilidade
+    switch (type) {
+      case SpecialAbilityType.superShot:
+        _log('Executando efeito: Tiro Poderoso');
+        _fireSuperShot();
+        break;
+      case SpecialAbilityType.areaBomb:
+        _log('Executando efeito: Bomba de Área');
+        _triggerAreaBomb();
+        break;
+      case SpecialAbilityType.timeWarp:
+        _log('Executando efeito: Distorção Temporal');
+        // O efeito é gerenciado pelo _updateGame()
+        try {
+          AudioManager().playSound('time_warp');
+        } catch (e) {
+          _log('Erro ao tocar som time_warp: $e');
+        }
+        break;
+      case SpecialAbilityType.magnetField:
+        _log('Executando efeito: Campo Magnético');
+        _activateMagnetField();
+        break;
+      case SpecialAbilityType.rapidFire:
+        _log('Executando efeito: Tiro Rápido');
+        // O efeito é gerenciado pelo método shootProjectile()
+        try {
+          AudioManager().playSound('rapid_fire');
+        } catch (e) {
+          _log('Erro ao tocar som rapid_fire: $e');
+        }
+        break;
+    }
+
+    return true;
+  }
+
+  void _fireSuperShot() {
+    if (_cannon == null) return;
+
+    // Tocar efeito sonoro
+    try {
+      AudioManager().playSound('super_shot');
+    } catch (e) {
+      _log('Erro ao tocar som super_shot: $e');
+    }
+
+    // O problema aqui pode ser a direção. Vamos calcular a direção corretamente
+    // Ao invés de usar uma direção fixa, vamos calcular a direção para a frente do canhão
+    // Assumindo que o centro da tela é para cima
+    Offset direction;
+
+    // Direção para o centro superior da tela
+    direction = Offset(0, -1);
+
+    // Criar um projétil grande e poderoso
+    final superProjectile = Projectile(
+      position: _cannon!.position,
+      direction: direction,
+      speed: 15.0,
+      radius: 15.0, // Projétil muito maior
+      damage: 5,    // Capaz de destruir vários inimigos
+      isSuperShot: true,
+      color: Colors.amber, // Cor específica para o super tiro
+    );
+
+    _projectiles.add(superProjectile);
+
+    // Adicionar efeito visual (explosão no canhão)
+    _addExplosion(
+      _cannon!.position,
+      isSpecialEffect: true,
+      color: Colors.amber,
+      maxRadius: 40,
+      growthRate: 3.0,
+    );
+
+    // Log para debug
+    _log('Super Shot disparado na direção $direction');
+  }
+
+  void _triggerAreaBomb() {
+    if (_cannon == null) return;
+
+    // Tocar efeito sonoro
+    try {
+      AudioManager().playSound('area_bomb');
+    } catch (e) {
+      _log('Erro ao tocar som area_bomb: $e');
+    }
+
+    // Log para debug
+    _log('Bomba de Área ativada. Inimigos na tela: ${_enemies.length}');
+
+    // Adicionar explosão grande no centro
+    _addExplosion(
+      _cannon!.position,
+      isSpecialEffect: true,
+      color: Colors.redAccent,
+      maxRadius: _screenSize.width * 0.6, // Explosão grande
+      growthRate: 12.0, // Cresce rapidamente
+    );
+
+    // Vamos criar uma cópia da lista de inimigos antes de iterá-la
+    // para evitar problemas de "Concurrent Modification"
+    final enemiesCopy = List<Enemy>.from(_enemies);
+
+    // Adicionar pontuação por cada inimigo
+    for (final enemy in enemiesCopy) {
+      // Adicionar pontuação por cada inimigo destruído
+      _score += enemy.pointValue;
+
+      // Criar explosões em todos os inimigos
+      _addExplosion(enemy.position);
+
+      // Log para cada inimigo destruído
+      _log('Inimigo destruído pela bomba de área: pontos +${enemy.pointValue}');
+    }
+
+    // Limpar todos os inimigos
+    _enemies.clear();
+
+    // Notificar ouvintes para atualização visual
+    notifyListeners();
+  }
+
+  void _activateMagnetField() {
+    // Tocar efeito sonoro
+    AudioManager().playSound('magnet_field');
+
+    // Marcar todos os power-ups para serem atraídos
+    for (final powerUp in _powerUps) {
+      powerUp.isAttracted = true;
+    }
+
+    // Adicionar efeito visual
+    if (_cannon != null) {
+      _addExplosion(
+        _cannon!.position,
+        isSpecialEffect: true,
+        color: Colors.blueAccent,
+        maxRadius: 100,
+        growthRate: 4.0,
+      );
+    }
   }
 
   String getDifficultyDetails() {
@@ -465,6 +668,10 @@ class GameController extends ChangeNotifier {
 
     _cannon?.reset();
 
+    // Resetar estados de habilidades
+    _isTimeWarpActive = false;
+    _isRapidFireActive = false;
+
     // Parar todos os timers
     _stopTimers();
 
@@ -707,7 +914,12 @@ class GameController extends ChangeNotifier {
 
     // Atualizar inimigos
     for (int i = _enemies.length - 1; i >= 0; i--) {
-      _enemies[i].update();
+      // Se o TimeWarp estiver ativo, desacelerar os inimigos
+      if (_isTimeWarpActive) {
+        _enemies[i].update(speedMultiplier: _timeWarpFactor);
+      } else {
+        _enemies[i].update();
+      }
 
       // Verificar colisão com o canhão
       if (_cannon != null && circleCollision(
@@ -786,7 +998,7 @@ class GameController extends ChangeNotifier {
           hit = true;
           break;
         }
-        }
+      }
 
       if (hit) {
         _enemies.removeAt(i);
@@ -1049,20 +1261,38 @@ class GameController extends ChangeNotifier {
     return _difficultyThresholds[level - 1];
   }
 
-// Obter o próximo threshold
+  // Obter o próximo threshold
   int getNextDifficultyThreshold() {
     final level = _difficultyLevel.toInt();
     if (level >= _difficultyThresholds.length) return _difficultyThresholds.last;
     return _difficultyThresholds[level];
   }
 
-  // Adicionar explosão
-  void _addExplosion(Offset position) {
-    final explosion = Explosion(position: position);
+  void _addExplosion(Offset position, {
+    bool isSpecialEffect = false,
+    Color? color,
+    double? maxRadius,
+    double? growthRate,
+  }) {
+    final explosion = Explosion(
+      position: position,
+      isSpecialEffect: isSpecialEffect,
+      radius: isSpecialEffect ? 10.0 : 5.0,  // Valores iniciais diferentes para efeitos especiais
+      maxRadius: maxRadius ?? (isSpecialEffect ? 100.0 : 40.0),  // Valor padrão maior para efeitos especiais
+      growthRate: growthRate ?? (isSpecialEffect ? 5.0 : 2.0),   // Crescimento mais rápido para efeitos especiais
+      color: color ?? (isSpecialEffect ? Colors.amber : Colors.orange),
+      opacity: isSpecialEffect ? 0.8 : 1.0,  // Opacidade inicial diferente
+      fadeRate: isSpecialEffect ? 0.02 : 0.05, // Taxa de desvanecimento diferente
+    );
+
     _explosions.add(explosion);
+
+    // Log para debug
+    if (isSpecialEffect) {
+      _log('Efeito especial de explosão criado em $position. maxRadius: ${explosion.maxRadius}, growthRate: ${explosion.growthRate}');
+    }
   }
 
-  // Atirar projétil
   void shootProjectile(Offset targetPosition) {
     if (_gameState != GameState.playing || !_isInitialized || _cannon == null) return;
 
@@ -1084,20 +1314,35 @@ class GameController extends ChangeNotifier {
 
         _addProjectile(rotatedDirection);
       }
+    } else if (_isRapidFireActive) {
+      // Atirar vários projéteis rapidamente
+      for (int i = 0; i < _rapidFireShotsPerTap; i++) {
+        // Pequena variação na direção para espalhar os tiros
+        final angle = (i - _rapidFireShotsPerTap / 2) * 0.05;
+        final rotatedDirection = Offset(
+          direction.dx * cos(angle) - direction.dy * sin(angle),
+          direction.dx * sin(angle) + direction.dy * cos(angle),
+        );
+
+        // Pequena variação na velocidade
+        final speedMultiplier = 1.0 + (i * 0.1);
+
+        _addProjectile(rotatedDirection, speedMultiplier: speedMultiplier);
+      }
     } else {
       // Tiro normal
       _addProjectile(direction);
     }
   }
 
-  // Adicionar projétil
-  void _addProjectile(Offset direction) {
+  // Adicionar projétil com suporte para multplicador de velocidade
+  void _addProjectile(Offset direction, {double speedMultiplier = 1.0}) {
     if (_cannon == null) return;
 
     // Ajustar velocidade se tiver boost de velocidade
-    double speed = 10.0;
+    double speed = 10.0 * speedMultiplier;
     if (_cannon!.hasPowerUp(PowerUpType.speedBoost)) {
-      speed = 15.0;
+      speed = 15.0 * speedMultiplier;
     }
 
     final projectile = Projectile(
@@ -1105,6 +1350,10 @@ class GameController extends ChangeNotifier {
       direction: direction,
       speed: speed,
       radius: 5,
+      // Damage e isSuperShot são propriedades novas que precisam ser
+      // adicionadas à classe Projectile
+      damage: 1,
+      isSuperShot: false,
     );
 
     _projectiles.add(projectile);
@@ -1122,6 +1371,11 @@ class GameController extends ChangeNotifier {
   @override
   void dispose() {
     _stopTimers();
+
+    // Limpar recursos do gerenciador de habilidades
+    _abilityManager.removeListener(_handleAbilityStateChanged);
+    _abilityManager.dispose();
+
     AudioManager().dispose();
     super.dispose();
   }

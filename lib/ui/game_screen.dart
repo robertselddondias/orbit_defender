@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:orbit_defender/entities/game_state.dart';
 import 'package:orbit_defender/entities/high_score.dart';
+import 'package:orbit_defender/entities/special_ability.dart';
 import 'package:orbit_defender/game_controller.dart';
 import 'package:orbit_defender/manager/game_manager.dart';
 import 'package:orbit_defender/ui/hud.dart';
 import 'package:orbit_defender/ui/menu_screen.dart';
+import 'package:orbit_defender/ui/widgets/abilities_panel.dart';
 import 'package:orbit_defender/utils/audio_manager.dart';
 import 'package:orbit_defender/utils/game_painter.dart';
 import 'package:orbit_defender/utils/high_score_manager.dart';
@@ -25,6 +27,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   // Animação para o efeito de paralaxe
   late AnimationController _animationController;
   late Animation<double> _animation;
+
 
   @override
   void initState() {
@@ -622,6 +625,21 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
               child: HUD(gameController: _gameController!),
             ),
 
+          // Painel de Habilidades Especiais
+          if (_gameController!.gameState == GameState.playing)
+            Positioned(
+              bottom: responsive.dp(30),
+              left: 0,
+              right: 0,
+              child: Center(
+                child: AbilitiesPanel(
+                  onAbilityActivated: (SpecialAbilityType type) {
+                    _gameController!.activateSpecialAbility(type);
+                  },
+                ),
+              ),
+            ),
+
           // Botão de pausa - ajustado para diferentes tamanhos de tela
           if (_gameController!.gameState == GameState.playing ||
               _gameController!.gameState == GameState.paused)
@@ -672,10 +690,36 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
               height: double.infinity,
               color: Colors.red.withOpacity(0.2),
             ),
+          if (_gameController != null && _gameController!.gameState == GameState.playing)
+            Positioned(
+              bottom: responsive.dp(30),
+              left: 0,
+              right: 0,
+              child: Center(
+                child: AbilitiesPanel(
+                  onAbilityActivated: (SpecialAbilityType type) {
+                    _gameController!.activateSpecialAbility(type);
+                  },
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
+
+  // void _registerSpecialAbilitySounds() {
+  //   try {
+  //     // Registrar os sons para as habilidades especiais
+  //     AudioManager().preloadSound('super_shot.mp3');
+  //     AudioManager().preloadSound('area_bomb.mp3');
+  //     AudioManager().preloadSound('time_warp.mp3');
+  //     AudioManager().preloadSound('magnet_field.mp3');
+  //     AudioManager().preloadSound('rapid_fire.mp3');
+  //   } catch (e) {
+  //     debugPrint('Erro ao pré-carregar sons de habilidades: $e');
+  //   }
+  // }
 
   Widget _buildPauseScreen(ResponsiveUtils responsive) {
     return Container(

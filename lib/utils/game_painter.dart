@@ -110,18 +110,63 @@ class GamePainter extends CustomPainter {
 
   void _drawProjectile(Canvas canvas, Projectile projectile) {
     try {
+      // Definir a cor base do projétil
+      Color baseColor = projectile.isSuperShot ? Colors.amber : projectile.color;
+
+      // Paint para o projétil principal
       final paint = Paint()
-        ..color = Colors.yellow
+        ..color = baseColor
         ..style = PaintingStyle.fill;
 
+      // Desenhar o projétil principal
       canvas.drawCircle(projectile.position, projectile.radius, paint);
 
-      // Efeito de brilho
-      final glowPaint = Paint()
-        ..color = Colors.yellow.withOpacity(0.5)
-        ..style = PaintingStyle.fill;
+      // Para super tiro, adicionar um efeito de trilha
+      if (projectile.isSuperShot) {
+        // Adicionar trilha atrás do projétil
+        final pathPaint = Paint()
+          ..color = Colors.amber.withOpacity(0.3)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = projectile.radius * 1.5;
 
-      canvas.drawCircle(projectile.position, projectile.radius * 1.5, glowPaint);
+        final path = Path();
+        path.moveTo(
+            projectile.position.dx - projectile.direction.dx * projectile.radius * 4,
+            projectile.position.dy - projectile.direction.dy * projectile.radius * 4
+        );
+        path.lineTo(projectile.position.dx, projectile.position.dy);
+
+        canvas.drawPath(path, pathPaint);
+
+        // Primeiro brilho (mais intenso)
+        final glowPaint1 = Paint()
+          ..color = Colors.amber.withOpacity(0.7)
+          ..style = PaintingStyle.fill;
+
+        canvas.drawCircle(projectile.position, projectile.radius * 1.8, glowPaint1);
+
+        // Segundo brilho (menos intenso, mais amplo)
+        final glowPaint2 = Paint()
+          ..color = Colors.amber.withOpacity(0.3)
+          ..style = PaintingStyle.fill;
+
+        canvas.drawCircle(projectile.position, projectile.radius * 3.0, glowPaint2);
+
+        // Terceiro brilho (muito tênue, bem amplo)
+        final glowPaint3 = Paint()
+          ..color = Colors.amber.withOpacity(0.1)
+          ..style = PaintingStyle.fill;
+
+        canvas.drawCircle(projectile.position, projectile.radius * 5.0, glowPaint3);
+      }
+      // Para projéteis normais, adicionar um efeito de brilho simples
+      else {
+        final glowPaint = Paint()
+          ..color = projectile.color.withOpacity(0.5)
+          ..style = PaintingStyle.fill;
+
+        canvas.drawCircle(projectile.position, projectile.radius * 1.5, glowPaint);
+      }
     } catch (e) {
       debugPrint('Erro ao desenhar projétil: $e');
     }
@@ -342,17 +387,71 @@ class GamePainter extends CustomPainter {
 
   void _drawExplosion(Canvas canvas, Explosion explosion) {
     try {
+      // Cor base com opacidade
       final paint = Paint()
-        ..color = Colors.orange.withOpacity(explosion.opacity)
+        ..color = explosion.color.withOpacity(explosion.opacity)
         ..style = PaintingStyle.fill;
 
+      // Desenhar o círculo principal da explosão
       canvas.drawCircle(explosion.position, explosion.radius, paint);
 
-      final innerPaint = Paint()
-        ..color = Colors.yellow.withOpacity(explosion.opacity)
-        ..style = PaintingStyle.fill;
+      // Efeitos diferentes para explosões especiais vs. normais
+      if (explosion.isSpecialEffect) {
+        // Para efeitos especiais, desenhar vários anéis concêntricos
 
-      canvas.drawCircle(explosion.position, explosion.radius * 0.6, innerPaint);
+        // Anel externo
+        final ringPaint = Paint()
+          ..color = Colors.white.withOpacity(explosion.opacity * 0.6)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3.0;
+
+        canvas.drawCircle(explosion.position, explosion.radius * 0.9, ringPaint);
+
+        // Anel médio
+        final midRingPaint = Paint()
+          ..color = Colors.white.withOpacity(explosion.opacity * 0.8)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0;
+
+        canvas.drawCircle(explosion.position, explosion.radius * 0.7, midRingPaint);
+
+        // Núcleo mais brilhante
+        final corePaint = Paint()
+          ..color = Colors.white.withOpacity(explosion.opacity)
+          ..style = PaintingStyle.fill;
+
+        canvas.drawCircle(explosion.position, explosion.radius * 0.4, corePaint);
+
+        // Para bombas de área, adicionar partículas
+        if (explosion.radius > 100) { // Assume que explosões grandes são bombas de área
+          final random = Random();
+          final particlePaint = Paint()
+            ..color = explosion.color.withOpacity(explosion.opacity * 0.7)
+            ..style = PaintingStyle.fill;
+
+          // Desenhar algumas partículas aleatórias
+          for (int i = 0; i < 15; i++) {
+            final angle = random.nextDouble() * 2 * pi;
+            final distance = random.nextDouble() * explosion.radius * 0.8;
+            final particleSize = random.nextDouble() * 5 + 3;
+
+            final particlePosition = Offset(
+                explosion.position.dx + cos(angle) * distance,
+                explosion.position.dy + sin(angle) * distance
+            );
+
+            canvas.drawCircle(particlePosition, particleSize, particlePaint);
+          }
+        }
+      }
+      // Para explosões normais, desenhar apenas um núcleo brilhante
+      else {
+        final innerPaint = Paint()
+          ..color = Colors.yellow.withOpacity(explosion.opacity)
+          ..style = PaintingStyle.fill;
+
+        canvas.drawCircle(explosion.position, explosion.radius * 0.6, innerPaint);
+      }
     } catch (e) {
       debugPrint('Erro ao desenhar explosão: $e');
     }
