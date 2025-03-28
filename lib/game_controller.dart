@@ -293,33 +293,17 @@ class GameController extends ChangeNotifier {
 
     // Tocar efeito sonoro
     try {
-      AudioManager().playSound('super_shot');
+      AudioManager().playSound('super_shot', volume: 0.8);
+      _log('Som super_shot reproduzido com sucesso');
     } catch (e) {
       _log('Erro ao tocar som super_shot: $e');
     }
 
-    // O problema aqui pode ser a direção. Vamos calcular a direção corretamente
-    // Ao invés de usar uma direção fixa, vamos calcular a direção para a frente do canhão
-    // Assumindo que o centro da tela é para cima
-    Offset direction;
+    // Criar múltiplos projéteis em um padrão de leque
+    final int numShots = 3;
+    final double angleSeparation = 0.2; // Separação angular entre tiros (em radianos)
 
-    // Direção para o centro superior da tela
-    direction = Offset(0, -1);
-
-    // Criar um projétil grande e poderoso
-    final superProjectile = Projectile(
-      position: _cannon!.position,
-      direction: direction,
-      speed: 15.0,
-      radius: 15.0, // Projétil muito maior
-      damage: 5,    // Capaz de destruir vários inimigos
-      isSuperShot: true,
-      color: Colors.amber, // Cor específica para o super tiro
-    );
-
-    _projectiles.add(superProjectile);
-
-    // Adicionar efeito visual (explosão no canhão)
+    // Criar um efeito visual no canhão
     _addExplosion(
       _cannon!.position,
       isSpecialEffect: true,
@@ -328,8 +312,34 @@ class GameController extends ChangeNotifier {
       growthRate: 3.0,
     );
 
-    // Log para debug
-    _log('Super Shot disparado na direção $direction');
+    // IMPORTANTE: Aqui estamos criando múltiplos projéteis em diferentes direções
+    for (int i = 0; i < numShots; i++) {
+      // Calcular ângulo para este tiro
+      double angle = -angleSeparation + (i * angleSeparation);
+      if (numShots > 1) {
+        angle = -angleSeparation * (numShots - 1) / 2 + (i * angleSeparation);
+      }
+
+      // Direção para cima com variação angular
+      Offset direction = Offset(sin(angle), -cos(angle)).normalized();
+
+      // Criar super projétil
+      final superProjectile = Projectile(
+        position: _cannon!.position,
+        direction: direction,
+        speed: 12.0, // Velocidade menor para ter mais chance de acertar
+        radius: 15.0, // Projétil muito maior
+        damage: 5,    // Capaz de destruir vários inimigos
+        isSuperShot: true,
+        color: Colors.amber,
+      );
+
+      _projectiles.add(superProjectile);
+      _log('Super Shot disparado na direção $direction');
+    }
+
+    // Notificar para atualizar a UI
+    notifyListeners();
   }
 
   void _triggerAreaBomb() {
@@ -337,43 +347,71 @@ class GameController extends ChangeNotifier {
 
     // Tocar efeito sonoro
     try {
-      AudioManager().playSound('area_bomb');
+      AudioManager().playSound('explosion_large', volume: 1.0);
+      _log('Som explosion_large reproduzido com sucesso');
     } catch (e) {
-      _log('Erro ao tocar som area_bomb: $e');
+      _log('Erro ao tocar som explosion_large: $e');
+      // Tentar som alternativo
+      try {
+        AudioManager().playSound('explosion_small', volume: 1.0);
+      } catch (_) {}
     }
 
     // Log para debug
     _log('Bomba de Área ativada. Inimigos na tela: ${_enemies.length}');
 
-    // Adicionar explosão grande no centro
+    // Verificar se existem inimigos para destruir
+    if (_enemies.isEmpty) {
+      _log('Nenhum inimigo na tela para destruir pela bomba de área');
+    }
+
+    // VERSÃO 1: Com fadeRate (use esta se o método _addExplosion aceitar fadeRate)
     _addExplosion(
       _cannon!.position,
       isSpecialEffect: true,
-      color: Colors.redAccent,
-      maxRadius: _screenSize.width * 0.6, // Explosão grande
-      growthRate: 12.0, // Cresce rapidamente
+      color: Colors.red.shade700,
+      maxRadius: _screenSize.width * 0.7, // Explosão maior
+      growthRate: 10.0, // Crescimento rápido
+      fadeRate: 0.015, // Desvanecimento mais lento para durar mais
     );
 
-    // Vamos criar uma cópia da lista de inimigos antes de iterá-la
-    // para evitar problemas de "Concurrent Modification"
-    final enemiesCopy = List<Enemy>.from(_enemies);
+    /* VERSÃO 2: Sem fadeRate (use esta se o método _addExplosion não aceitar fadeRate)
+  _addExplosion(
+    _cannon!.position,
+    isSpecialEffect: true,
+    color: Colors.red.shade700,
+    maxRadius: _screenSize.width * 0.7, // Explosão maior
+    growthRate: 10.0, // Crescimento rápido
+  );
+  */
 
-    // Adicionar pontuação por cada inimigo
+    // Vamos criar cópias das listas para evitar problemas de concorrência
+    final enemiesCopy = List<Enemy>.from(_enemies);
+    int totalPoints = 0;
+
+    // Processar cada inimigo
     for (final enemy in enemiesCopy) {
-      // Adicionar pontuação por cada inimigo destruído
+      // Pontuação
+      totalPoints += enemy.pointValue;
       _score += enemy.pointValue;
 
-      // Criar explosões em todos os inimigos
-      _addExplosion(enemy.position);
-
-      // Log para cada inimigo destruído
-      _log('Inimigo destruído pela bomba de área: pontos +${enemy.pointValue}');
+      // Criar explosões menores em cada posição de inimigo
+      _addExplosion(
+        enemy.position,
+        isSpecialEffect: true,
+        color: Colors.orange,
+        maxRadius: 30,
+        growthRate: 2.0,
+      );
     }
 
-    // Limpar todos os inimigos
+    // Log de resultado
+    _log('Bomba de Área destruiu ${enemiesCopy.length} inimigos. Pontos ganhos: $totalPoints');
+
+    // IMPORTANTE: Limpar TODOS os inimigos da tela
     _enemies.clear();
 
-    // Notificar ouvintes para atualização visual
+    // Notificar para atualizar a UI
     notifyListeners();
   }
 
@@ -896,7 +934,7 @@ class GameController extends ChangeNotifier {
     }
   }
 
-  // Atualizar estado do jogo
+  // Método _updateGame completo com correções para poderes especiais
   void _updateGame() {
     if (!_isInitialized || _gameState != GameState.playing) return;
 
@@ -962,41 +1000,88 @@ class GameController extends ChangeNotifier {
             _projectiles[j].position, _projectiles[j].radius,
             _enemies[i].position, _enemies[i].radius)) {
 
-          // Adicionar pontos
-          _score += _enemies[i].pointValue;
+          // MODIFICAÇÃO: Verificar se é um super shot
+          if (_projectiles[j].isSuperShot) {
+            // Super Shot pode destruir vários inimigos sem ser destruído
+            _score += _enemies[i].pointValue;
 
-          // Criar explosão
-          _addExplosion(_enemies[i].position);
+            // Criar explosão
+            _addExplosion(_enemies[i].position);
 
-          AudioManager().playSmallExplosionSound();
+            try {
+              AudioManager().playSmallExplosionSound();
+            } catch (e) {
+              _log('Erro ao tocar som de explosão: $e');
+            }
 
-          // Chance de criar power-up quando inimigo é destruído
-          // Ajustar probabilidade baseada no tipo de inimigo
-          double powerUpChance = _enemies[i].type == EnemyType.fastAsteroid ? 0.15 : 0.08;
+            // Chance de criar power-up quando inimigo é destruído
+            double powerUpChance = _enemies[i].type == EnemyType.fastAsteroid ? 0.15 : 0.08;
+            final int index = (_difficultyLevel - 1).clamp(0, 9).toInt();
+            powerUpChance += index * 0.01; // Aumenta 1% por nível
 
-          // Aumentar ligeiramente a chance com o nível de dificuldade
-          final int index = (_difficultyLevel - 1).clamp(0, 9).toInt();
-          powerUpChance += index * 0.01; // Aumenta 1% por nível
+            if (_random.nextDouble() < powerUpChance) {
+              // Criar power-up na posição do inimigo destruído
+              final powerUp = PowerUp(
+                position: _enemies[i].position,
+                direction: Offset(_random.nextDouble() * 2 - 1, _random.nextDouble() * 2 - 1).normalized(),
+                speed: 0.5, // Velocidade reduzida para dar tempo de pegar
+                radius: 20,
+                type: _getRandomPowerUpType(),
+                isLevelUpBonus: false,
+              );
 
-          if (_random.nextDouble() < powerUpChance) {
-            // Criar power-up na posição do inimigo destruído
-            final powerUp = PowerUp(
-              position: _enemies[i].position,
-              direction: Offset(_random.nextDouble() * 2 - 1, _random.nextDouble() * 2 - 1).normalized(),
-              speed: 0.5, // Velocidade reduzida para dar tempo de pegar
-              radius: 20,
-              type: _getRandomPowerUpType(),
-              isLevelUpBonus: false,
-            );
+              _powerUps.add(powerUp);
+              _log('Power-up criado após destruir inimigo: ${powerUp.type}');
+            }
 
-            _powerUps.add(powerUp);
-            _log('Power-up criado após destruir inimigo: ${powerUp.type}');
+            // Reduzir o dano do projétil
+            _projectiles[j].damage -= 1;
+
+            // Se o dano chegou a zero, remove o projétil
+            if (_projectiles[j].damage <= 0) {
+              _projectiles.removeAt(j);
+            }
+
+            hit = true;
+            break;
+          } else {
+            // Comportamento normal para projéteis comuns
+            _score += _enemies[i].pointValue;
+
+            // Criar explosão
+            _addExplosion(_enemies[i].position);
+
+            try {
+              AudioManager().playSmallExplosionSound();
+            } catch (e) {
+              _log('Erro ao tocar som de explosão: $e');
+            }
+
+            // Chance de criar power-up quando inimigo é destruído
+            double powerUpChance = _enemies[i].type == EnemyType.fastAsteroid ? 0.15 : 0.08;
+            final int index = (_difficultyLevel - 1).clamp(0, 9).toInt();
+            powerUpChance += index * 0.01; // Aumenta 1% por nível
+
+            if (_random.nextDouble() < powerUpChance) {
+              // Criar power-up na posição do inimigo destruído
+              final powerUp = PowerUp(
+                position: _enemies[i].position,
+                direction: Offset(_random.nextDouble() * 2 - 1, _random.nextDouble() * 2 - 1).normalized(),
+                speed: 0.5, // Velocidade reduzida para dar tempo de pegar
+                radius: 20,
+                type: _getRandomPowerUpType(),
+                isLevelUpBonus: false,
+              );
+
+              _powerUps.add(powerUp);
+              _log('Power-up criado após destruir inimigo: ${powerUp.type}');
+            }
+
+            // Remover projétil
+            _projectiles.removeAt(j);
+            hit = true;
+            break;
           }
-
-          // Remover projétil e inimigo
-          _projectiles.removeAt(j);
-          hit = true;
-          break;
         }
       }
 
@@ -1273,23 +1358,24 @@ class GameController extends ChangeNotifier {
     Color? color,
     double? maxRadius,
     double? growthRate,
+    double? fadeRate, // Adicionando o parâmetro fadeRate
   }) {
     final explosion = Explosion(
       position: position,
       isSpecialEffect: isSpecialEffect,
-      radius: isSpecialEffect ? 10.0 : 5.0,  // Valores iniciais diferentes para efeitos especiais
-      maxRadius: maxRadius ?? (isSpecialEffect ? 100.0 : 40.0),  // Valor padrão maior para efeitos especiais
-      growthRate: growthRate ?? (isSpecialEffect ? 5.0 : 2.0),   // Crescimento mais rápido para efeitos especiais
+      radius: isSpecialEffect ? 10.0 : 5.0,
+      maxRadius: maxRadius ?? (isSpecialEffect ? 100.0 : 40.0),
+      growthRate: growthRate ?? (isSpecialEffect ? 5.0 : 2.0),
       color: color ?? (isSpecialEffect ? Colors.amber : Colors.orange),
-      opacity: isSpecialEffect ? 0.8 : 1.0,  // Opacidade inicial diferente
-      fadeRate: isSpecialEffect ? 0.02 : 0.05, // Taxa de desvanecimento diferente
+      opacity: isSpecialEffect ? 0.8 : 1.0,
+      fadeRate: fadeRate ?? (isSpecialEffect ? 0.02 : 0.05), // Uso do parâmetro fadeRate
     );
 
     _explosions.add(explosion);
 
     // Log para debug
     if (isSpecialEffect) {
-      _log('Efeito especial de explosão criado em $position. maxRadius: ${explosion.maxRadius}, growthRate: ${explosion.growthRate}');
+      _log('Efeito especial de explosão criado em $position. maxRadius: ${explosion.maxRadius}, growthRate: ${explosion.growthRate}, fadeRate: ${explosion.fadeRate}');
     }
   }
 
