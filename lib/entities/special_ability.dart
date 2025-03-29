@@ -120,4 +120,15 @@ class SpecialAbility {
       primaryColor: Colors.greenAccent,
     );
   }
+
+  void forceActivate() {
+    _isActive = true;
+    _lastUsedTime = DateTime.now();
+
+    // Desativar após a duração do efeito
+    Future.delayed(effectDuration, () {
+      _isActive = false;
+    });
+  }
 }
+

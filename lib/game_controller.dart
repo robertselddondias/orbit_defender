@@ -238,51 +238,54 @@ class GameController extends ChangeNotifier {
       return false;
     }
 
+    bool forceTrigger = true;
+
     // Log para debug
     _log('Tentando ativar habilidade: $type');
 
-    // Tentar ativar a habilidade
-    final bool activated = _abilityManager.activateAbility(type);
-    if (!activated) {
-      _log('Habilidade $type não pode ser ativada (em cooldown)');
-      return false;
-    }
+    // // Tentar ativar a habilidade
+    // final bool activated = _abilityManager.activateAbility(type);
+    // if (!activated) {
+    //   _log('Habilidade $type não pode ser ativada (em cooldown)');
+    //   return false;
+    // }
 
     // Log para debug
     _log('Habilidade $type ativada com sucesso');
 
-    // Executar o efeito da habilidade
-    switch (type) {
-      case SpecialAbilityType.superShot:
-        _log('Executando efeito: Tiro Poderoso');
-        _fireSuperShot();
-        break;
-      case SpecialAbilityType.areaBomb:
-        _log('Executando efeito: Bomba de Área');
-        _triggerAreaBomb();
-        break;
-      case SpecialAbilityType.timeWarp:
-        _log('Executando efeito: Distorção Temporal');
-        // O efeito é gerenciado pelo _updateGame()
-        try {
-          AudioManager().playSound('time_warp');
-        } catch (e) {
-          _log('Erro ao tocar som time_warp: $e');
-        }
-        break;
-      case SpecialAbilityType.magnetField:
-        _log('Executando efeito: Campo Magnético');
-        _activateMagnetField();
-        break;
-      case SpecialAbilityType.rapidFire:
-        _log('Executando efeito: Tiro Rápido');
-        // O efeito é gerenciado pelo método shootProjectile()
-        try {
-          AudioManager().playSound('rapid_fire');
-        } catch (e) {
-          _log('Erro ao tocar som rapid_fire: $e');
-        }
-        break;
+    if (forceTrigger) {
+      switch (type) {
+        case SpecialAbilityType.superShot:
+          _log('Executando efeito: Tiro Poderoso');
+          _fireSuperShot();
+          break;
+        case SpecialAbilityType.areaBomb:
+          _log('Executando efeito: Bomba de Área');
+          _triggerAreaBomb();
+          break;
+        case SpecialAbilityType.timeWarp:
+          _log('Executando efeito: Distorção Temporal');
+          // O efeito é gerenciado pelo _updateGame()
+          try {
+            AudioManager().playSound('time_warp');
+          } catch (e) {
+            _log('Erro ao tocar som time_warp: $e');
+          }
+          break;
+        case SpecialAbilityType.magnetField:
+          _log('Executando efeito: Campo Magnético');
+          _activateMagnetField();
+          break;
+        case SpecialAbilityType.rapidFire:
+          _log('Executando efeito: Tiro Rápido');
+          // O efeito é gerenciado pelo método shootProjectile()
+          try {
+            AudioManager().playSound('rapid_fire');
+          } catch (e) {
+            _log('Erro ao tocar som rapid_fire: $e');
+          }
+          break;
+      }
     }
 
     return true;
@@ -348,7 +351,6 @@ class GameController extends ChangeNotifier {
     // Tocar efeito sonoro
     try {
       AudioManager().playSound('explosion_large', volume: 1.0);
-      _log('Som explosion_large reproduzido com sucesso');
     } catch (e) {
       _log('Erro ao tocar som explosion_large: $e');
       // Tentar som alternativo
@@ -357,45 +359,22 @@ class GameController extends ChangeNotifier {
       } catch (_) {}
     }
 
-    // Log para debug
-    _log('Bomba de Área ativada. Inimigos na tela: ${_enemies.length}');
-
-    // Verificar se existem inimigos para destruir
-    if (_enemies.isEmpty) {
-      _log('Nenhum inimigo na tela para destruir pela bomba de área');
-    }
-
-    // VERSÃO 1: Com fadeRate (use esta se o método _addExplosion aceitar fadeRate)
+    // Criar explosão grande e visível
     _addExplosion(
       _cannon!.position,
       isSpecialEffect: true,
       color: Colors.red.shade700,
-      maxRadius: _screenSize.width * 0.7, // Explosão maior
+      maxRadius: _screenSize.width * 0.7, // Explosão bem grande
       growthRate: 10.0, // Crescimento rápido
-      fadeRate: 0.015, // Desvanecimento mais lento para durar mais
+      fadeRate: 0.01, // Fade lento para durar mais
     );
 
-    /* VERSÃO 2: Sem fadeRate (use esta se o método _addExplosion não aceitar fadeRate)
-  _addExplosion(
-    _cannon!.position,
-    isSpecialEffect: true,
-    color: Colors.red.shade700,
-    maxRadius: _screenSize.width * 0.7, // Explosão maior
-    growthRate: 10.0, // Crescimento rápido
-  );
-  */
-
-    // Vamos criar cópias das listas para evitar problemas de concorrência
+    // Destruir todos os inimigos
     final enemiesCopy = List<Enemy>.from(_enemies);
-    int totalPoints = 0;
-
-    // Processar cada inimigo
     for (final enemy in enemiesCopy) {
-      // Pontuação
-      totalPoints += enemy.pointValue;
       _score += enemy.pointValue;
 
-      // Criar explosões menores em cada posição de inimigo
+      // Criar explosões menores em cada inimigo
       _addExplosion(
         enemy.position,
         isSpecialEffect: true,
@@ -405,13 +384,10 @@ class GameController extends ChangeNotifier {
       );
     }
 
-    // Log de resultado
-    _log('Bomba de Área destruiu ${enemiesCopy.length} inimigos. Pontos ganhos: $totalPoints');
-
-    // IMPORTANTE: Limpar TODOS os inimigos da tela
+    // Limpar todos os inimigos
     _enemies.clear();
 
-    // Notificar para atualizar a UI
+    // Notificar mudança
     notifyListeners();
   }
 
@@ -1387,6 +1363,11 @@ class GameController extends ChangeNotifier {
 
     // Calcular direção
     final direction = (targetPosition - _cannon!.position).normalized();
+
+    if (_abilityManager.isAbilityActive(SpecialAbilityType.superShot)) {
+      _fireSuperShot(); // Ou ajuste este método para aceitar a direção
+      return;
+    }
 
     // Verificar se há poder de tiro triplo ativo
     if (_cannon!.hasPowerUp(PowerUpType.tripleShot)) {
