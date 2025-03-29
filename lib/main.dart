@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 import 'package:orbit_defender/ui/menu_screen.dart';
 import 'package:orbit_defender/ui/splash_screen.dart';
+
 import 'firebase_options.dart';
 import 'services/push_notification_service.dart';
 

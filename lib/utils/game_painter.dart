@@ -7,6 +7,7 @@ import 'package:orbit_defender/entities/power_up.dart';
 import 'package:orbit_defender/entities/power_up_type.dart';
 import 'package:orbit_defender/entities/projectile.dart';
 import 'package:orbit_defender/game_controller.dart';
+import 'package:orbit_defender/utils/power_name_animation.dart';
 
 class GamePainter extends CustomPainter {
   final GameController gameController;
@@ -43,6 +44,10 @@ class GamePainter extends CustomPainter {
       for (final explosion in gameController.explosions) {
         _drawExplosion(canvas, explosion);
       }
+
+      // Desenhar animação do nome da habilidade (NOVO)
+      _drawPowerNameAnimation(canvas);
+
     } catch (e) {
       debugPrint('Erro ao desenhar elementos do jogo: $e');
     }
@@ -169,6 +174,197 @@ class GamePainter extends CustomPainter {
       }
     } catch (e) {
       debugPrint('Erro ao desenhar projétil: $e');
+    }
+  }
+
+  void _drawPowerNameAnimation(Canvas canvas) {
+    final animation = gameController.currentPowerNameAnimation;
+    if (animation == null) return;
+
+    final screenCenter = Offset(
+      gameController.screenSize.width / 2,
+      gameController.screenSize.height * 0.2, // Posicionamento mais alto para não atrapalhar a jogabilidade
+    );
+
+    // Cores baseadas no tipo de poder
+    final powerColor = _getPowerColor(animation.powerName);
+
+    // Configurar o estilo do texto - mais simples, porém com destaque
+    final textStyle = TextStyle(
+      fontSize: 42, // Tamanho menor
+      fontWeight: FontWeight.bold,
+      color: powerColor, // Cor principal do poder
+      shadows: [
+        Shadow(
+          color: Colors.white.withOpacity(animation.opacity * 0.8),
+          blurRadius: 12,
+          offset: Offset(0, 0),
+        ),
+        Shadow(
+          color: Colors.black.withOpacity(animation.opacity * 0.6),
+          blurRadius: 4,
+          offset: Offset(1, 1),
+        ),
+      ],
+    );
+
+    // Criar o TextPainter
+    final textSpan = TextSpan(
+      text: animation.powerName,
+      style: textStyle,
+    );
+
+    final textPainter = TextPainter(
+      text: textSpan,
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    );
+
+    // Layout e desenho do texto
+    textPainter.layout(
+      minWidth: 0,
+      maxWidth: gameController.screenSize.width,
+    );
+
+    // Salvar estado atual do canvas
+    canvas.save();
+
+    // Aplicar transformações - posicionamento fixo e escala simples
+    canvas.translate(screenCenter.dx, screenCenter.dy);
+    canvas.scale(animation.scale);
+
+    // Aplicar opacidade
+    final paintOpacity = Paint()
+      ..colorFilter = ColorFilter.mode(
+          Colors.white.withOpacity(animation.opacity),
+          BlendMode.srcIn);
+
+    // Desenhar o texto com as transformações aplicadas
+    canvas.saveLayer(
+      Rect.fromLTWH(
+        -textPainter.width / 2,
+        -textPainter.height / 2,
+        textPainter.width,
+        textPainter.height,
+      ),
+      paintOpacity,
+    );
+
+    textPainter.paint(
+      canvas,
+      Offset(-textPainter.width / 2, -textPainter.height / 2),
+    );
+
+    // Restaurar o estado da camada
+    canvas.restore();
+
+    // Adicionar uma linha de destaque simples abaixo do texto
+    final linePaint = Paint()
+      ..color = powerColor.withOpacity(animation.opacity * 0.7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0;
+
+    canvas.drawLine(
+        Offset(-textPainter.width / 2, textPainter.height / 2 + 5),
+        Offset(textPainter.width / 2, textPainter.height / 2 + 5),
+        linePaint
+    );
+
+    // Restaurar o estado do canvas
+    canvas.restore();
+  }
+
+  void _drawParticles(Canvas canvas, PowerNameAnimation animation, Offset center) {
+    final random = Random(animation.startTime.millisecondsSinceEpoch);
+    final powerColor = _getPowerColor(animation.powerName);
+
+    final numParticles = 40;
+
+    for (int i = 0; i < numParticles; i++) {
+      // Posição baseada em tempo e índice
+      final angle = random.nextDouble() * 2 * pi;
+      final distance = random.nextDouble() * 300 * animation.scale;
+
+      // Partículas mais afastadas do centro conforme a animação progride
+      final particleX = center.dx + cos(angle) * distance;
+      final particleY = center.dy + sin(angle) * distance;
+
+      // Tamanho variável
+      final size = 2.0 + random.nextDouble() * 6.0 * animation.opacity;
+
+      // Opacidade baseada na distância do centro
+      final particleOpacity = (1.0 - distance / 300) * animation.opacity;
+
+      if (particleOpacity <= 0) continue;
+
+      final particlePaint = Paint()
+        ..color = powerColor.withOpacity(particleOpacity)
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(Offset(particleX, particleY), size, particlePaint);
+    }
+  }
+
+  Color _getPowerColor(String powerName) {
+    if (powerName.contains("TIRO") || powerName.contains("MEGA")) {
+      return Colors.amber;
+    } else if (powerName.contains("BOMBA") || powerName.contains("EXPLOSÃO")) {
+      return Colors.red;
+    } else if (powerName.contains("TEMPORAL") || powerName.contains("CONTROLE")) {
+      return Colors.purple;
+    } else if (powerName.contains("MAGNÉTICO") || powerName.contains("ATRAÇÃO")) {
+      return Colors.blue;
+    } else if (powerName.contains("RÁPIDO") || powerName.contains("FÚRIA")) {
+      return Colors.green;
+    }
+    return Colors.orange;
+  }
+
+  Color _getSecondaryColor(String powerName) {
+    if (powerName.contains("TIRO PODEROSO")) {
+      return Colors.orange;
+    } else if (powerName.contains("BOMBA")) {
+      return Colors.deepOrange;
+    } else if (powerName.contains("TEMPORAL")) {
+      return Colors.deepPurple;
+    } else if (powerName.contains("MAGNÉTICO")) {
+      return Colors.lightBlue;
+    } else if (powerName.contains("RÁPIDO")) {
+      return Colors.lightGreen;
+    }
+    return Colors.yellow;
+  }
+
+  void _drawLightRays(Canvas canvas, Offset center, PowerNameAnimation animation) {
+    final powerColor = _getPowerColor(animation.powerName);
+    final rayPaint = Paint()
+      ..color = powerColor.withOpacity(animation.opacity * 0.7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3);
+
+    final numRays = 12;
+    final maxRayLength = gameController.screenSize.width * 0.5 * animation.scale;
+
+    for (int i = 0; i < numRays; i++) {
+      final angle = i * (2 * pi / numRays);
+      final rayLength = maxRayLength * (0.5 + 0.5 * sin(animation.startTime.millisecondsSinceEpoch * 0.005 + i));
+
+      final startPoint = Offset(
+          center.dx + cos(angle) * 50,
+          center.dy + sin(angle) * 50
+      );
+
+      final endPoint = Offset(
+          center.dx + cos(angle) * rayLength,
+          center.dy + sin(angle) * rayLength
+      );
+
+      final path = Path()
+        ..moveTo(startPoint.dx, startPoint.dy)
+        ..lineTo(endPoint.dx, endPoint.dy);
+
+      canvas.drawPath(path, rayPaint);
     }
   }
 

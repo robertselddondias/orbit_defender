@@ -2,7 +2,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:orbit_defender/entities/cannon.dart';
 import 'package:orbit_defender/entities/enemy.dart';
@@ -16,6 +15,7 @@ import 'package:orbit_defender/manager/ability_manager.dart';
 import 'package:orbit_defender/utils/audio_manager.dart';
 import 'package:orbit_defender/utils/high_score_manager.dart';
 import 'package:orbit_defender/utils/math_utils.dart';
+import 'package:orbit_defender/utils/power_name_animation.dart';
 
 class GameController extends ChangeNotifier {
   // Flag de inicialização
@@ -169,6 +169,9 @@ class GameController extends ChangeNotifier {
   bool _isNewHighScore = false;
   bool get isNewHighScore => _isNewHighScore;
 
+  PowerNameAnimation? _currentPowerNameAnimation;
+
+  PowerNameAnimation? get currentPowerNameAnimation => _currentPowerNameAnimation;
 
   final Map<PowerUpType, int> _collectedPowerUps = {
     PowerUpType.tripleShot: 0,
@@ -240,18 +243,28 @@ class GameController extends ChangeNotifier {
 
     bool forceTrigger = true;
 
-    // Log para debug
-    _log('Tentando ativar habilidade: $type');
-
-    // // Tentar ativar a habilidade
-    // final bool activated = _abilityManager.activateAbility(type);
-    // if (!activated) {
-    //   _log('Habilidade $type não pode ser ativada (em cooldown)');
-    //   return false;
-    // }
-
-    // Log para debug
     _log('Habilidade $type ativada com sucesso');
+
+    String powerName = "";
+    switch (type) {
+      case SpecialAbilityType.superShot:
+        powerName = "TIRO PODEROSO!";
+        break;
+      case SpecialAbilityType.areaBomb:
+        powerName = "BOMBA DE ÁREA!";
+        break;
+      case SpecialAbilityType.timeWarp:
+        powerName = "DISTORÇÃO TEMPORAL!";
+        break;
+      case SpecialAbilityType.magnetField:
+        powerName = "CAMPO MAGNÉTICO!";
+        break;
+      case SpecialAbilityType.rapidFire:
+        powerName = "TIRO RÁPIDO!";
+        break;
+    }
+
+    _showPowerNameAnimation(powerName);
 
     if (forceTrigger) {
       switch (type) {
@@ -289,6 +302,85 @@ class GameController extends ChangeNotifier {
     }
 
     return true;
+  }
+
+  void _showPowerNameAnimation(String powerName) {
+    // Criar a animação
+    _currentPowerNameAnimation = PowerNameAnimation(powerName: powerName);
+
+    // Adicionar efeito de câmera shake para aumentar o impacto
+    _startCameraShakeEffect();
+
+    // Adicionar efeito de flash rápido na tela
+    _addFlashEffect();
+
+    // Adicionar som de impacto (além do som específico da habilidade)
+    try {
+      AudioManager().playSound('power_impact', volume: 0.6);
+    } catch (e) {
+      _log('Erro ao tocar som de impacto: $e');
+      // Tentar som alternativo se disponível
+    }
+
+    // Programar a remoção da animação
+    Future.delayed(Duration(milliseconds: PowerNameAnimation.animationDuration + 100), () {
+      if (_currentPowerNameAnimation?.powerName == powerName) {
+        _currentPowerNameAnimation = null;
+        notifyListeners();
+      }
+    });
+
+    notifyListeners();
+  }
+
+  void _startCameraShakeEffect() {
+    // Implementar o efeito de tremor aqui, se tiver uma propriedade de offset no GamePainter
+    // Por exemplo, você pode definir um _cameraShakeOffset que é usado no seu GamePainter
+
+    // Aqui estamos apenas simulando o efeito com logs
+    _log('Iniciando efeito de tremor de câmera');
+
+    // Você pode criar uma sequência de movimentos de câmera
+    const int shakeDuration = 1000; // 1 segundo de tremor
+    const int shakeInterval = 50; // Atualizar a cada 50ms
+
+    for (int i = 0; i < shakeDuration / shakeInterval; i++) {
+      Future.delayed(Duration(milliseconds: i * shakeInterval), () {
+        if (_gameState != GameState.playing || _currentPowerNameAnimation == null) return;
+
+        // Aqui você pode atualizar o offset da câmera com base na intensidade
+        // _cameraShakeOffset = Offset(...);
+        notifyListeners();
+      });
+    }
+
+    // Resetar a câmera após o efeito
+    Future.delayed(Duration(milliseconds: shakeDuration), () {
+      // _cameraShakeOffset = Offset.zero;
+      notifyListeners();
+    });
+  }
+
+  void _addFlashEffect() {
+    // Aqui você pode implementar um flash que é renderizado pelo GamePainter
+    // Por exemplo, definir uma propriedade _screenFlash que o GamePainter usa
+
+    _log('Adicionando efeito de flash');
+
+    // O flash pode ter um fade out rápido
+    // _screenFlash = 1.0; // Opacidade máxima
+
+    const int flashDuration = 300; // 300ms para o flash completo
+    const int flashSteps = 6;
+
+    for (int i = 0; i < flashSteps; i++) {
+      Future.delayed(Duration(milliseconds: i * (flashDuration / flashSteps).round()), () {
+        if (_gameState != GameState.playing || _currentPowerNameAnimation == null) return;
+
+        // _screenFlash = 1.0 - (i / flashSteps);
+        notifyListeners();
+      });
+    }
   }
 
   void _fireSuperShot() {
@@ -913,6 +1005,16 @@ class GameController extends ChangeNotifier {
   // Método _updateGame completo com correções para poderes especiais
   void _updateGame() {
     if (!_isInitialized || _gameState != GameState.playing) return;
+
+    if (_currentPowerNameAnimation != null) {
+      _currentPowerNameAnimation!.update();
+
+      if (_currentPowerNameAnimation!.isDone) {
+        _currentPowerNameAnimation = null;
+      }
+
+      notifyListeners();
+    }
 
     _updateDifficultyLevel();
 

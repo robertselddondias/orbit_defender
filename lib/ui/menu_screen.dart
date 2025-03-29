@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:orbit_defender/manager/game_manager.dart';
 import 'package:orbit_defender/ui/game_screen.dart';
+import 'package:orbit_defender/utils/audio_manager.dart';
 import 'package:orbit_defender/utils/parallax_starfield_painter.dart';
 import 'package:orbit_defender/utils/responsive_utils.dart';
-import 'package:orbit_defender/utils/audio_manager.dart';
 
 class MenuScreen extends StatefulWidget {
   const MenuScreen({Key? key}) : super(key: key);
